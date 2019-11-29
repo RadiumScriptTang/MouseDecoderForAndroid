@@ -2,8 +2,10 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +38,8 @@ public class BluetoothServer {
 
     private int directionCounterX = 0;
     private int directionCounterY = 0;
+
+    private Robot robot = null;
 
     private Thread thread = new Thread(new Runnable() {
         @Override
@@ -72,9 +76,24 @@ public class BluetoothServer {
                         lastVy = vy;
                         vx += kickBackTimerX++ > kickBackProtectedPeriod?ax * RATE:0;
                         vy -= kickBackTimerY++ > kickBackProtectedPeriod?ay * RATE:0;
-                        x += vx * RATE * 10;
-                        y += vy * RATE * 10;
 
+                        Point p  = MouseInfo.getPointerInfo().getLocation();
+
+                        robot.mouseMove((int)(p.getX() + vx * RATE * 10),(int)(p.getY() + vy * RATE * 10));
+
+                        if(acc[3] > 0) { // right
+                            robot.mousePress(InputEvent.BUTTON3_MASK);
+                            robot.mouseRelease(InputEvent.BUTTON3_MASK);
+                        }
+                        if (acc[4] > 0) { // left
+                            robot.mousePress(InputEvent.BUTTON1_MASK);
+                            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                        }
+                        if (acc[5] != 0) {
+                            robot.mouseWheel((int)(acc[5]));
+                        } else {
+                            robot.mouseWheel(0);
+                        }
                         noResponseTimerX = ax == 0?noResponseTimerX + 1:0;
                         noResponseTimerY = ay == 0?noResponseTimerY + 1:0;
                         if (noResponseTimerY > 10){
@@ -86,16 +105,11 @@ public class BluetoothServer {
                             vx = 0;
                         }
 
-                        if (x < 0 || x > 1000){
-                            x = 500;
-                        }
-                        if (y < 0 || y > 1000){
-                            y = 500;
-                        }
+
                         if (ax != 0){
                             System.out.println("ax:" + ax + ",vx:" + vx);
                         }
-                        jButton.setLocation((int)x,(int)y);
+//                        jButton.setLocation((int)x,(int)y);
 //                        System.out.print(acc[0]);
 //                        System.out.print(",");
                     }
@@ -113,17 +127,23 @@ public class BluetoothServer {
     private String bluetoothUUID = "btspp://localhost:0000110100001000800000805F9B34FB";
 
     public BluetoothServer(){
-        JFrame jFrame = new JFrame("hello");
-        jFrame.setSize(2000,2000);
-        jButton = new JButton("");
-        JPanel jPanel = new JPanel();
-        jFrame.add(jPanel);
-        jPanel.add(jButton);
-        jPanel.setLayout(null);
-        jButton.setSize(20,20);
-        jButton.setLocation(250,250);
+//        JFrame jFrame = new JFrame("hello");
+//        jFrame.setSize(2000,2000);
+//        jButton = new JButton("");
+//        JPanel jPanel = new JPanel();
+//        jFrame.add(jPanel);
+//        jPanel.add(jButton);
+//        jPanel.setLayout(null);
+//        jButton.setSize(20,20);
+//        jButton.setLocation(250,250);
+//
+//        jFrame.setVisible(true);
 
-        jFrame.setVisible(true);
+        try {
+            robot = new Robot();
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
 
         try {
             streamConnectionNotifier = (StreamConnectionNotifier) Connector.open(bluetoothUUID);
